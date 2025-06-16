@@ -81,6 +81,10 @@ public class MySketch extends PApplet {
     // For Practice 2: track how many mini suns have been clicked
     private int miniSunsClickedPractice2 = 0;
     private int miniSunsNeededPractice2 = 3;
+    
+    // Declare a 2D array for 5 clouds, each with x and y
+    private PImage cloudImg;
+    float[][] cloudPositions = new float[5][2];
 
     // Setup the canvas size for the Processing sketch
     public void settings() {
@@ -98,6 +102,14 @@ public class MySketch extends PApplet {
     // Initialize/reset game variables and objects to start or restart the game
     public void setupGame() {
         background(255);
+        
+        cloudPositions[0][0] = 50;  cloudPositions[0][1] = 100;
+        cloudPositions[1][0] = 250; cloudPositions[1][1] = 150;
+        cloudPositions[2][0] = 450; cloudPositions[2][1] = 100;
+        cloudPositions[3][0] = 650; cloudPositions[3][1] = 150;
+        cloudPositions[4][0] = 850; cloudPositions[4][1] = 100;
+    
+        cloudImg = loadImage("images/cloud.png");
 
         // Create arrow object with image path
         arrow = new Arrow(this, "images/arrow.png");
@@ -168,6 +180,11 @@ public class MySketch extends PApplet {
     public void draw() {
         background(175, 214, 255); // Light blue background
 
+        // Draw the clouds using the coordinates from the 2D array
+        for (int i = 0; i < cloudPositions.length; i++) {
+            image(cloudImg, cloudPositions[i][0], cloudPositions[i][1]);
+        }
+    
         if (showingIntro) {
             drawIntro();  // Display intro text and instructions
             return;
