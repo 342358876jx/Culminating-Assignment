@@ -90,6 +90,25 @@ public class Arrow {
             flying = true;
         }
     }
+    
+    /**
+     * shoot the arrow in direction of mouse coordinates.
+     * 
+     * @param mouseX         the X position of the mouse
+     * @param mouseY         the Y position of the mouse
+     */
+    public void shootTowards(float mouseX, float mouseY) {
+        if (!flying) {
+            // Calculate angle from base to mouse position
+            float dx = mouseX - baseX;
+            float dy = mouseY - baseY;
+            baseAngle = PApplet.degrees(PApplet.atan2(dy, dx));
+            angle = baseAngle;
+            flying = true;
+            x = baseX;
+            y = baseY;
+        }
+    }
 
     /**
      * Updates the arrow's position based on angle and speed if it's flying.

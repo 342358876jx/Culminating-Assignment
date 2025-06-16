@@ -44,7 +44,7 @@ public class BossSun extends Sun {
         this.y = y;                       // Set Y position
         this.upperBound = upperBound;     // Set top vertical bound
         this.lowerBound = lowerBound;     // Set bottom vertical bound
-        this.image.resize(160, 160);      // Enlarge boss sun image to make it more prominent
+        this.image.resize(200, 200);      // Enlarge boss sun image to make it more prominent
     }
 
     /**

@@ -3,103 +3,153 @@
  * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
  */
 
-/**
- * MiniSun represents a small sun object that moves randomly on the screen.
- * It is used during boss battles and practice stages as a target for the player to click.
- * Each MiniSun has a position, velocity, and timer to track its lifespan.
- *
- * @author jojox
- * @version 1.0 1st version of MiniSun.java for culminating assignment
- * @date 06/15/2025
- */
-
 package culminating;
 
 import processing.core.PApplet;
 import java.util.Random;
 
-public class MiniSun {
-    // Reference to the PApplet to draw and access Processing functions
-    private PApplet p;
+/**
+ * MiniSun represents a small sun object that moves randomly or toward a target on the screen.
+ * It is used during boss battles and practice stages as a target for the player to click.
+ * Each MiniSun has a position, velocity, a timer to track its lifespan, and optional target movement.
+ * 
+ * This class inherits from Sun and overrides some behaviors for movement and display.
+ * 
+ * @author jojox
+ * @version 1.0 1st version of MiniSun.java for culminating assignment
+ * @date 06/16/2025
+ */
+public class MiniSun extends Sun {
+    
+    /** Horizontal velocity for random movement */
+    private float vx, vy;
 
-    // Position of the mini sun
-    float x, y;
-
-    // Velocity of the mini sun (random movement)
-    float vx, vy;
-
-    // Timer to track how long the sun has existed
+    /** Timer to track how long the MiniSun has existed (in frames) */
     int timer;
 
+    /** X-coordinate of the target position (if moving toward target) */
+    private float targetX;
+
+    /** Y-coordinate of the target position (if moving toward target) */
+    private float targetY;
+
+    /** Speed of movement when moving toward target */
+    private float speed = 3;
+
+    /** Flag indicating whether MiniSun moves toward a target or randomly */
+    private boolean movesToTarget;
+
     /**
-     * Constructs a MiniSun object at a position near the given center.
-     * Randomly assigns velocity and slight offset from the center.
+     * Constructor to create a MiniSun with random movement near a center position.
      * 
-     * @param p the PApplet object (typically "this" from main sketch)
-     * @param centerX the x-coordinate near which the mini sun spawns
-     * @param centerY the y-coordinate near which the mini sun spawns
+     * @param p The PApplet reference for Processing drawing and functions.
+     * @param centerX The X coordinate near which the MiniSun will spawn.
+     * @param centerY The Y coordinate near which the MiniSun will spawn.
      */
     public MiniSun(PApplet p, float centerX, float centerY) {
-        this.p = p;
-
+        super(p, "path/to/minisun/image.png");  // Load a smaller sun image or placeholder
+        
         Random rand = new Random();
 
-        // Random offset near the center point
-        x = centerX + rand.nextInt(100) - 50;
-        y = centerY + rand.nextInt(100) - 50;
+        // Set initial position randomly offset from the center point (within ±50 pixels)
+        this.x = centerX + rand.nextInt(100) - 50;
+        this.y = centerY + rand.nextInt(100) - 50;
 
-        // Random velocity between -1 and 1
-        vx = rand.nextFloat() * 2 - 1;
-        vy = rand.nextFloat() * 2 - 1;
+        // Initialize random velocities between -1 and 1 for smooth drifting
+        this.vx = rand.nextFloat() * 2 - 1;
+        this.vy = rand.nextFloat() * 2 - 1;
 
-        timer = 0;
+        this.timer = 0;
+        this.movesToTarget = false;  // Will move randomly
     }
 
     /**
-     * Updates the MiniSun's position and timer.
-     * Should be called once per frame.
+     * Constructor to create a MiniSun that moves toward a specified target position.
+     * 
+     * @param p The PApplet reference for Processing drawing and functions.
+     * @param startX The starting X position of the MiniSun.
+     * @param startY The starting Y position of the MiniSun.
+     * @param targetX The X coordinate of the target to move toward.
+     * @param targetY The Y coordinate of the target to move toward.
+     */
+    public MiniSun(PApplet p, float startX, float startY, float targetX, float targetY) {
+        super(p, "path/to/minisun/image.png");  // Load image for the MiniSun
+        
+        // Initialize starting position
+        this.x = startX;
+        this.y = startY;
+
+        // Set target position
+        this.targetX = targetX;
+        this.targetY = targetY;
+
+        this.timer = 0;
+        this.movesToTarget = true;   // Will move toward target
+    }
+
+    /**
+     * Updates the MiniSun's position and timer. Should be called once per frame.
+     * Moves either randomly or smoothly toward the target position.
      */
     public void update() {
-        x += vx;
-        y += vy;
-        timer++;
+        if (movesToTarget) {
+            // Calculate vector from current position to target
+            float dx = targetX - x;
+            float dy = targetY - y;
+            float distance = PApplet.sqrt(dx * dx + dy * dy);
+
+            if (distance > speed) {
+                // Normalize direction and move towards target at fixed speed
+                x += (dx / distance) * speed;
+                y += (dy / distance) * speed;
+            } else {
+                // Snap to target if close enough
+                x = targetX;
+                y = targetY;
+            }
+        } else {
+            // Update position by velocity for random drifting movement
+            x += vx;
+            y += vy;
+        }
+        timer++;  // Increment lifespan timer (in frames)
     }
 
     /**
-     * Draws the MiniSun as a yellow-orange circle.
+     * Draws the MiniSun on screen.
+     * Uses the image from the Sun superclass if available; otherwise, draws a colored circle.
      */
+    @Override
     public void display() {
-        p.fill(255, 200, 0);  // Sun-like color
-        p.noStroke();
-        p.ellipse(x, y, 30, 30);  // Draw circle with 30px diameter
+        if (image != null) {
+            super.display();  // Use image drawing from Sun class
+        } else {
+            // Draw a simple yellow-orange circle if no image available
+            p.fill(255, 200, 0);
+            p.noStroke();
+            p.ellipse(x, y, 30, 30);
+        }
     }
 
     /**
-     * Checks whether the mini sun has been clicked by the player.
+     * Checks if the MiniSun has been hit (clicked) by the player.
      * 
-     * @param mx the mouse X position
-     * @param my the mouse Y position
-     * @return true if mouse click is within 20px of the sun’s center
+     * @param mx The X coordinate of the mouse click.
+     * @param my The Y coordinate of the mouse click.
+     * @return true if the click is within 20 pixels of the MiniSun's center.
      */
     public boolean isHit(float mx, float my) {
         return PApplet.dist(mx, my, x, y) < 20;
     }
 
     /**
-     * Gets the current X position of the mini sun.
+     * Checks if the MiniSun has reached its target position.
+     * Only applicable if movesToTarget is true.
      * 
-     * @return the X coordinate
+     * @return true if MiniSun is within 10 pixels of the target position; false otherwise.
      */
-    public float getX() {
-        return x;
-    }
-
-    /**
-     * Gets the current Y position of the mini sun.
-     * 
-     * @return the Y coordinate
-     */
-    public float getY() {
-        return y;
+    public boolean hitsTarget() {
+        if (!movesToTarget) return false;
+        return PApplet.dist(x, y, targetX, targetY) < 10;
     }
 }
