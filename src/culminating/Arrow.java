@@ -19,7 +19,7 @@ public class Arrow {
     private float x, y;           // Current position of the arrow
     private float angle;          // Current angle of the arrow
     private boolean flying;       // Whether the arrow has been shot and is in motion
-    private float speed = 12;     // Speed at which the arrow travels
+    private float speed = 15;     // Speed at which the arrow travels
 
     private float baseX = 110;    // Initial X position before shooting
     private float baseY = 295;    // Initial Y position before shooting
