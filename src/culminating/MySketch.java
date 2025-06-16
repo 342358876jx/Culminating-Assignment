@@ -440,13 +440,13 @@ public class MySketch extends PApplet {
         fill(255, 0, 0);
         rect(50, 30, playerHealth * 2, 20);
         fill(0);
-        text("Player", 50, 25);
+        text("HouYi", 50, 25);
 
         // Draw boss health bar (orange)
         fill(255, 165, 0);
         rect(700, 30, bossHealth * 2, 20);
         fill(0);
-        text("Boss", 700, 25);
+        text("Sun", 700, 25);
 
         // If boss defeated, mark and save score
         if (bossHealth <= 0) {
