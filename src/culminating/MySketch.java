@@ -7,6 +7,15 @@
  * 
  * @author jojox
  */
+/*
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
+ */
+
+/**
+ * 
+ * @author jojox
+ */
 package culminating;
 
 import processing.core.PApplet;
@@ -43,6 +52,19 @@ public class MySketch extends PApplet {
     private int logoutX, logoutY, logoutW, logoutH;
     private int continueX, continueY, continueW, continueH;
 
+    // Boss battle variables
+    private boolean bossBattle = false;
+    private boolean finalBossTriggered = false;
+    private boolean bossDefeated = false;
+    private boolean playerDefeated = false;
+
+    private int bossHealth;
+    private int playerHealth;
+
+    private BossSun bossSun;
+    private ArrayList<MiniSun> miniSuns = new ArrayList<>();
+    private int miniSunLifespan = 3000; // milliseconds for mini suns lifespan
+
     public void settings() {
         size(1000, 600);
     }
@@ -69,6 +91,10 @@ public class MySketch extends PApplet {
         upperBody.resize(200, 200);
         lowerBody = loadImage("images/lowerbody.png");
         lowerBody.resize(170, 200);
+        
+        bossSun = new BossSun(this, "images/sun6.png", 750, height / 2, height / 2 - 100, height / 2 + 100);
+        bossHealth = 100;
+        playerHealth = 100;
 
         arrowCount = 15;
         successfulHits = 0;
@@ -77,6 +103,12 @@ public class MySketch extends PApplet {
         gameEnded = false;
         stageOneCompleted = false;
         waitingForStageTwo = false;
+        bossBattle = false;
+        finalBossTriggered = false;
+        bossDefeated = false;
+        playerDefeated = false;
+        miniSuns.clear();
+        loop();
 
         showingIntro = true;
         showingPractice = false;
@@ -124,6 +156,21 @@ public class MySketch extends PApplet {
                 return;
             }
         }
+        
+        // Endgame screen
+        if (gameEnded || bossDefeated || playerDefeated) {
+            drawGameOver();
+            return;
+        }
+
+        // Boss battle stage 2
+        if (bossBattle) {
+            drawFinalBossBattle();
+            return;
+        }
+
+        // Normal gameplay stage 1
+        drawStage1();
 
         fill(0);
         textSize(20);
@@ -147,16 +194,11 @@ public class MySketch extends PApplet {
             return;
         }
 
-        if (currentSunIndex > suns.length && !stageOneCompleted) {
-            if (arrowCount >= 0 && successfulHits >= 3) {
-                stageOneCompleted = true;
-                waitingForStageTwo = true;
-                return;
-            } else {
-                gameEnded = true;
-                checkAndSaveHighScore();
-                return;
-            }
+         if (( successfulHits >= 3 && arrowCount >= 0 && currentSunIndex < suns.length) && !finalBossTriggered) {
+            finalBossTriggered = true;
+            bossBattle = true; // transition immediately next frame
+            return;
+
         }
 
         float radius = 500;
@@ -263,6 +305,51 @@ public class MySketch extends PApplet {
         image(lowerBody, 78, 413);
     }
 
+    private void drawFinalBossBattle() {
+        background(175, 214, 255);
+
+        bossSun.update();  // Move the boss sun up and down
+        bossSun.display();
+
+        for (int i = miniSuns.size() - 1; i >= 0; i--) {
+            MiniSun m = miniSuns.get(i);
+            m.update();
+            m.display();
+
+            if (m.timer > miniSunLifespan) {
+                playerHealth -= 20;
+                miniSuns.remove(i);
+                if (playerHealth <= 0) {
+                    playerDefeated = true;
+                    checkAndSaveHighScore();
+                    return;
+                }
+            }
+        }
+
+        if (frameCount % 90 == 0 && miniSuns.size() < 3) {  // spawn up to 3 mini suns
+            miniSuns.add(new MiniSun(this, bossSun.getX(), bossSun.getY()));
+        }
+
+        drawUpperBody();
+        arrow.display();
+
+        fill(255, 0, 0);
+        rect(50, 30, playerHealth * 2, 20);
+        fill(0);
+        text("Player", 50, 25);
+
+        fill(255, 165, 0);
+        rect(700, 30, bossHealth * 2, 20);
+        fill(0);
+        text("Boss", 700, 25);
+
+        if (bossHealth <= 0) {
+            bossDefeated = true;
+            checkAndSaveHighScore();
+        }
+    }
+    
     private void drawUpperBody() {
         pushMatrix();
         translate(arrow.getX(), arrow.getY());
@@ -270,6 +357,53 @@ public class MySketch extends PApplet {
         imageMode(CENTER);
         image(upperBody, -10, 10);
         popMatrix();
+    }
+    
+    private void drawGameOver() {
+        background(0);
+        fill(255);
+        textAlign(CENTER);
+        textSize(36);
+
+        if (bossDefeated) text("YOU WIN!", width / 2, height / 2 - 60);
+        else text("GAME OVER", width / 2, height / 2 - 60);
+
+        text("Score: " + score, width / 2, height / 2);
+        text("High Score: " + highScore, width / 2, height / 2 + 40);
+
+        fill(100, 200, 255);
+        rect(buttonX, buttonY, buttonW, buttonH, 10);
+        fill(0);
+        textSize(20);
+        text("Play Again", width / 2f, buttonY + 30);
+
+        fill(255, 100, 100);
+        rect(logoutX, logoutY, logoutW, logoutH, 10);
+        fill(0);
+        text("Logout", width / 2f, logoutY + 30);
+
+        noLoop();
+    }
+
+    private void drawStagePassed() {
+        fill(0);
+        textSize(36);
+        textAlign(CENTER, CENTER);
+        text("Passed Stage 1!", width / 2f, height / 2f - 60);
+        textSize(24);
+        text("Your Score: " + score, width / 2f, height / 2f - 20);
+        text("High Score: " + highScore, width / 2f, height / 2f + 10);
+        text("Arrows Left: " + arrowCount, width / 2f, height / 2f + 40);
+
+        fill(0, 255, 100);
+        rect(continueX, continueY, continueW, continueH, 10);
+        fill(0);
+        textSize(20);
+        text("Continue", width / 2f, continueY + 30);
+    }
+
+    private void drawStage1() {
+        // Could add more stage 1 specific drawing here if needed
     }
 
     public void keyPressed() {
@@ -306,17 +440,27 @@ public class MySketch extends PApplet {
     }
 
     public void mousePressed() {
-        if (gameEnded) {
+        if (gameEnded || playerDefeated || bossDefeated) {
             if (mouseX >= buttonX && mouseX <= buttonX + buttonW &&
                 mouseY >= buttonY && mouseY <= buttonY + buttonH) {
                 setupGame();
-                redraw();
             }
 
             if (mouseX >= logoutX && mouseX <= logoutX + logoutW &&
                 mouseY >= logoutY && mouseY <= logoutY + logoutH) {
                 checkAndSaveHighScore();
                 exit();
+            }
+        }
+
+        if (bossBattle && !bossDefeated && !playerDefeated) {
+            for (int i = miniSuns.size() - 1; i >= 0; i--) {
+                MiniSun m = miniSuns.get(i);
+                if (m.isHit(mouseX, mouseY)) {
+                    bossHealth -= 20;
+                    miniSuns.remove(i);
+                    break;
+                }
             }
         }
 
@@ -363,44 +507,5 @@ public class MySketch extends PApplet {
         } catch (IOException e) {
             println("Failed to write to scores.txt: " + e.getMessage());
         }
-    }
-
-    private void drawGameOver() {
-        fill(0);
-        textSize(40);
-        textAlign(CENTER, CENTER);
-        text("Game Over", width / 2f, height / 2f - 70);
-        textSize(30);
-        text("Your Score: " + score, width / 2f, height / 2f - 20);
-        text("High Score: " + highScore, width / 2f, height / 2f + 20);
-
-        fill(100, 200, 255);
-        rect(buttonX, buttonY, buttonW, buttonH, 10);
-        fill(0);
-        textSize(20);
-        text("Play Again", width / 2f, buttonY + 30);
-
-        fill(255, 100, 100);
-        rect(logoutX, logoutY, logoutW, logoutH, 10);
-        fill(0);
-        text("Logout", width / 2f, logoutY + 30);
-        noLoop();
-    }
-
-    private void drawStagePassed() {
-        fill(0);
-        textSize(36);
-        textAlign(CENTER, CENTER);
-        text("Passed Stage 1!", width / 2f, height / 2f - 60);
-        textSize(24);
-        text("Your Score: " + score, width / 2f, height / 2f - 20);
-        text("High Score: " + highScore, width / 2f, height / 2f + 10);
-        text("Arrows Left: " + arrowCount, width / 2f, height / 2f + 40);
-
-        fill(0, 255, 100);
-        rect(continueX, continueY, continueW, continueH, 10);
-        fill(0);
-        textSize(20);
-        text("Continue", width / 2f, continueY + 30);
     }
 }

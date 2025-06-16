@@ -52,4 +52,14 @@ public class BossSun extends Sun {
     public int getHealth() {
         return health;
     }
+    
+    // Getter for base X position
+    public float getX() {
+        return x;
+    }
+
+    // Getter for base Y position
+    public float getY() {
+        return y;
+    }
 }

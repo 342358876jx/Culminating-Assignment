@@ -1,7 +1,320 @@
+package culminating;
 
-350
+import processing.core.PApplet;
+import processing.core.PImage;
+import java.util.ArrayList;
+import java.io.*;
+import java.util.*;
+
+public class MySketch extends PApplet {
+
+    private Sun[] suns = new Sun[10];
+    private float[] angles = new float[10];
+    private int currentSunIndex = 0;
+    private Arrow arrow;
+
+    // Player and game state
+    private int arrowCount = 15;
+    private int missedSuns = 0;
+    private int score = 0;
+    private int highScore = 0;
+    private boolean gameEnded = false;
+
+    // Boss battle variables
+    private boolean bossBattle = false;
+    private boolean finalBossTriggered = false;
+    private boolean bossDefeated = false;
+    private boolean playerDefeated = false;
+
+    private BossSun bossSun;  // Use your existing BossSun class
+    private ArrayList<MiniSun> miniSuns = new ArrayList<>();
+    private int bossHealth = 100;
+    private int playerHealth = 100;
+    private final int miniSunLifespan = 300;
+
+    private PImage upperBody, lowerBody;
+    private int buttonX, buttonY, buttonW, buttonH;
+    private int logoutX, logoutY, logoutW, logoutH;
+
+    public void settings() {
+        size(1000, 600);
+    }
+
+    public void setup() {
+        textFont(createFont("Arial", 16));
+        setupGame();
+        loadHighScore();
+    }
+
+    public void setupGame() {
+        background(255);
+
+        arrow = new Arrow(this, "images/arrow.png");
+
+        for (int i = 0; i < suns.length; i++) {
+            suns[i] = new Sun(this, "images/sun" + ((i % 5) + 1) + ".png");
+            angles[i] = 0;
+        }
+
+        bossSun = new BossSun(this, "images/sun6.png", 750, height / 2, height / 2 - 100, height / 2 + 100);
+        bossHealth = 100;
+        playerHealth = 100;
+
+        upperBody = loadImage("images/upperbody.png");
+        upperBody.resize(200, 200);
+        lowerBody = loadImage("images/lowerbody.png");
+        lowerBody.resize(170, 200);
+
+        arrowCount = 12;
+        missedSuns = 0;
+        currentSunIndex = 0;
+        score = 0;
+        gameEnded = false;
+        bossBattle = false;
+        finalBossTriggered = false;
+        bossDefeated = false;
+        playerDefeated = false;
+        miniSuns.clear();
+        loop();
+
+        buttonW = 200; buttonH = 50;
+        buttonX = width / 2 - buttonW / 2;
+        buttonY = height / 2 + 100;
+
+        logoutW = 200; logoutH = 50;
+        logoutX = width / 2 - logoutW / 2;
+        logoutY = height / 2 + 170;
+    }
+
+    public void draw() {
+        background(175, 214, 255);
+
+        // Endgame screen
+        if (gameEnded || bossDefeated || playerDefeated) {
+            drawGameOver();
+            return;
+        }
+
+        // Boss battle stage 2
+        if (bossBattle) {
+            drawFinalBossBattle();
+            return;
+        }
+
+        // Normal gameplay stage 1
+        drawStage1();
+    }
+
+    private void drawStage1() {
+        // HUD
+        fill(0);
+        textSize(20);
+        text("Arrows left: " + arrowCount, 20, 30);
+        text("Missed Suns: " + missedSuns + "/5", 20, 60);
+        text("Score: " + score, 20, 90);
+
+        if ((missedSuns >= 5 || arrowCount <= 0 || currentSunIndex >= suns.length) && !finalBossTriggered) {
+            finalBossTriggered = true;
+            bossBattle = true;
+            return;
+        }
+
+        float radius = 500;
+        float centerX = width / 2f;
+        float centerY = height / 2f;
+
+        if (currentSunIndex < suns.length) {
+            float sunAngle = angles[currentSunIndex];
+            float sunX = centerX - cos(radians(sunAngle)) * radius;
+            float sunY = centerY - sin(radians(sunAngle)) * radius + 250;
+
+            pushMatrix();
+            translate(sunX, sunY);
+            rotate(radians(sunAngle));
+            imageMode(CENTER);
+            image(suns[currentSunIndex].getImage(), 0, 0);
+            popMatrix();
+
+            angles[currentSunIndex] += 0.5f;
+
+            if (angles[currentSunIndex] >= 180) {
+                missedSuns++;
+                currentSunIndex++;
+                arrow.reset();
+            }
+
+            fill(222, 200, 159);
+            rect(54, 325, 29, 30);
+            drawUpperBody();
+            arrow.update();
+            arrow.display();
+
+            if (arrow.isFlying() && arrow.isColliding(sunX, sunY)) {
+                arrow.reset();
+                score += 100;
+                currentSunIndex++;
+            }
+        }
+
+        fill(51, 0, 0);
+        rect(0, 400, 1000, 400);
+        image(lowerBody, 78, 413);
+    }
+
+    private void drawFinalBossBattle() {
+        background(175, 214, 255);
+
+        BossSun.update();  // Move the boss sun up and down
+        BossSun.display();
+
+        for (int i = miniSuns.size() - 1; i >= 0; i--) {
+            MiniSun m = miniSuns.get(i);
+            m.update();
+            m.display();
+
+            if (m.timer > miniSunLifespan) {
+                playerHealth -= 20;
+                miniSuns.remove(i);
+                if (playerHealth <= 0) {
+                    playerDefeated = true;
+                    checkAndSaveHighScore();
+                    return;
+                }
+            }
+        }
+
+        if (frameCount % 90 == 0 && miniSuns.size() < 3) {  // spawn up to 3 mini suns
+            miniSuns.add(new MiniSun(this, BossSun.getX(), BossSun.getY()));
+        }
+
+        drawUpperBody();
+        arrow.display();
+
+        fill(255, 0, 0);
+        rect(50, 30, playerHealth * 2, 20);
+        fill(0);
+        text("Player", 50, 25);
+
+        fill(255, 165, 0);
+        rect(700, 30, bossHealth * 2, 20);
+        fill(0);
+        text("Boss", 700, 25);
+
+        if (bossHealth <= 0) {
+            bossDefeated = true;
+            checkAndSaveHighScore();
+        }
+    }
+
+    private void drawUpperBody() {
+        pushMatrix();
+        translate(arrow.getX(), arrow.getY());
+        rotate(radians(arrow.getAngle()));
+        imageMode(CENTER);
+        image(upperBody, -10, 10);
+        popMatrix();
+    }
+
+    private void drawGameOver() {
+        background(0);
+        fill(255);
+        textAlign(CENTER);
+        textSize(36);
+
+        if (bossDefeated) text("YOU WIN!", width / 2, height / 2 - 60);
+        else text("GAME OVER", width / 2, height / 2 - 60);
+
+        text("Score: " + score, width / 2, height / 2);
+        text("High Score: " + highScore, width / 2, height / 2 + 40);
+
+        fill(100, 200, 255);
+        rect(buttonX, buttonY, buttonW, buttonH, 10);
+        fill(0);
+        textSize(20);
+        text("Play Again", width / 2f, buttonY + 30);
+
+        fill(255, 100, 100);
+        rect(logoutX, logoutY, logoutW, logoutH, 10);
+        fill(0);
+        text("Logout", width / 2f, logoutY + 30);
+
+        noLoop();
+    }
+
+    public void keyPressed() {
+        if (!arrow.isFlying() && !gameEnded && !playerDefeated && !bossDefeated) {
+            if (keyCode == LEFT || keyCode == UP) {
+                arrow.rotateAndTranslate(-1, -1, -1);
+            } else if (keyCode == RIGHT || keyCode == DOWN) {
+                arrow.rotateAndTranslate(1, 1, 1);
+            } else if (key == ' ') {
+                arrow.shoot();
+                arrowCount--;
+            }
+        }
+    }
+
+    public void mousePressed() {
+        if (gameEnded || playerDefeated || bossDefeated) {
+            if (mouseX >= buttonX && mouseX <= buttonX + buttonW &&
+                mouseY >= buttonY && mouseY <= buttonY + buttonH) {
+                setupGame();
+            }
+
+            if (mouseX >= logoutX && mouseX <= logoutX + logoutW &&
+                mouseY >= logoutY && mouseY <= logoutY + logoutH) {
+                checkAndSaveHighScore();
+                exit();
+            }
+        }
+
+        if (bossBattle && !bossDefeated && !playerDefeated) {
+            for (int i = miniSuns.size() - 1; i >= 0; i--) {
+                MiniSun m = miniSuns.get(i);
+                if (m.isHit(mouseX, mouseY)) {
+                    bossHealth -= 20;
+                    miniSuns.remove(i);
+                    break;
+                }
+            }
+        }
+    }
+
+    private void loadHighScore() {
+        try {
+            File file = new File("scores.txt");
+            if (file.exists()) {
+                Scanner scanner = new Scanner(file);
+                while (scanner.hasNextLine()) {
+                    int savedScore = Integer.parseInt(scanner.nextLine().trim());
+                    if (savedScore > highScore) {
+                        highScore = savedScore;
+                    }
+                }
+                scanner.close();
+            }
+        } catch (Exception e) {
+            println("Failed to read scores.txt: " + e.getMessage());
+        }
+    }
+
+    private void checkAndSaveHighScore() {
+        if (score > highScore) {
+            highScore = score;
+        }
+
+        try (FileWriter fw = new FileWriter("scores.txt", true)) {
+            fw.write(score + "\n");
+        } catch (IOException e) {
+            println("Failed to write to scores.txt: " + e.getMessage());
+        }
+    }
+}0
+340
+200
+180
+60
+80
+80
 0
-100
-0
-0
-0
+10
