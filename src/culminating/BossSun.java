@@ -63,6 +63,7 @@ public class BossSun extends Sun {
     /**
      * Displays the boss sun image on the screen at its current location.
      */
+    @Override
     public void display() {
         p.imageMode(PApplet.CENTER); // Center the image around (x, y)
         p.image(image, x, y);        // Draw image
