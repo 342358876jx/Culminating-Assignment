@@ -30,6 +30,7 @@ public class MySketch extends PApplet {
     private int[] sunScores = new int[10];
     // Current index of the sun being targeted
     private int currentSunIndex = 0;
+    public static int totalSunsCreated = 0; // static of suns created initially
 
     // Player's arrow object for aiming and shooting
     private Arrow arrow;
@@ -80,7 +81,6 @@ public class MySketch extends PApplet {
     // For Practice 2: track how many mini suns have been clicked
     private int miniSunsClickedPractice2 = 0;
     private int miniSunsNeededPractice2 = 3;
-    
 
     // Setup the canvas size for the Processing sketch
     public void settings() {
