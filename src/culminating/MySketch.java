@@ -151,7 +151,6 @@ public class MySketch extends PApplet {
             if (arrowCount >= 0 && successfulHits >= 3) {
                 stageOneCompleted = true;
                 waitingForStageTwo = true;
-                noLoop();
                 return;
             } else {
                 gameEnded = true;
@@ -212,7 +211,10 @@ public class MySketch extends PApplet {
     private void drawPractice() {
         fill(0);
         textSize(20);
-        text("Practice: Hit the sun to continue!", 40, 30);
+        text("Practice: Hit the sun to continue!", 170, 20);
+        text("Press [SPACE] to launch the arrows", 185, 50);
+        text("Press [UP] or [LEFT] to aim the arrow upwards.", 235, 80);        
+        text("Press [DOWN] or [RIGHT] to aim the arrow downwards.", 270, 110);
 
         float radius = 500;
         float centerX = width / 2f;
@@ -367,10 +369,10 @@ public class MySketch extends PApplet {
         fill(0);
         textSize(40);
         textAlign(CENTER, CENTER);
-        text("Game Over", width / 2f, height / 2f - 40);
+        text("Game Over", width / 2f, height / 2f - 70);
         textSize(30);
-        text("Your Score: " + score, width / 2f, height / 2f + 10);
-        text("High Score: " + highScore, width / 2f, height / 2f + 50);
+        text("Your Score: " + score, width / 2f, height / 2f - 20);
+        text("High Score: " + highScore, width / 2f, height / 2f + 20);
 
         fill(100, 200, 255);
         rect(buttonX, buttonY, buttonW, buttonH, 10);
