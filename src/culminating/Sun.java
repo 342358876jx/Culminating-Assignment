@@ -7,8 +7,8 @@
  * This is the Sun class, representing the rotating sun targets in the game.
  * Each Sun has an image and a position and can be displayed or checked for clicks (or collisions).
  * @author jojox
- * @version 1.0
- * @date
+ * @version 1.0 1st version of sun.java for culminating assignment
+ * @date 06/15/2025
  */
 
     package culminating;
