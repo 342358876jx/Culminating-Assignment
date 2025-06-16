@@ -7,15 +7,6 @@
  * 
  * @author jojox
  */
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
-
-/**
- * 
- * @author jojox
- */
 package culminating;
 
 import processing.core.PApplet;
@@ -46,6 +37,9 @@ public class MySketch extends PApplet {
     private boolean showingPractice = false;
     private boolean practiceCompleted = false;
     private boolean transitioningToGame = false;
+
+    private boolean showingPractice2 = false;  // NEW flag for Practice 2 stage
+
     private long transitionStartTime = 0;
 
     private int buttonX, buttonY, buttonW, buttonH;
@@ -64,6 +58,10 @@ public class MySketch extends PApplet {
     private BossSun bossSun;
     private ArrayList<MiniSun> miniSuns = new ArrayList<>();
     private int miniSunLifespan = 3000; // milliseconds for mini suns lifespan
+
+    // For practice2: count how many mini suns clicked
+    private int miniSunsClickedPractice2 = 0;
+    private int miniSunsNeededPractice2 = 3;
 
     public void settings() {
         size(1000, 600);
@@ -91,7 +89,7 @@ public class MySketch extends PApplet {
         upperBody.resize(200, 200);
         lowerBody = loadImage("images/lowerbody.png");
         lowerBody.resize(170, 200);
-        
+
         bossSun = new BossSun(this, "images/sun6.png", 750, height / 2, height / 2 - 100, height / 2 + 100);
         bossHealth = 100;
         playerHealth = 100;
@@ -108,6 +106,10 @@ public class MySketch extends PApplet {
         bossDefeated = false;
         playerDefeated = false;
         miniSuns.clear();
+
+        miniSunsClickedPractice2 = 0;  // Reset for practice2
+        showingPractice2 = false;      // Reset flag
+
         loop();
 
         showingIntro = true;
@@ -140,7 +142,12 @@ public class MySketch extends PApplet {
         }
 
         if (showingPractice) {
-            drawPractice();
+            drawPractice1();
+            return;
+        }
+
+        if (showingPractice2) {
+            drawPractice2();
             return;
         }
 
@@ -156,7 +163,7 @@ public class MySketch extends PApplet {
                 return;
             }
         }
-        
+
         // Endgame screen
         if (gameEnded || bossDefeated || playerDefeated) {
             drawGameOver();
@@ -194,11 +201,10 @@ public class MySketch extends PApplet {
             return;
         }
 
-         if (( successfulHits >= 3 && arrowCount >= 0 && currentSunIndex < suns.length) && !finalBossTriggered) {
+        if ((successfulHits >= 3 && arrowCount >= 0 && currentSunIndex == 9) && !finalBossTriggered) {
             finalBossTriggered = true;
             bossBattle = true; // transition immediately next frame
             return;
-
         }
 
         float radius = 500;
@@ -241,6 +247,51 @@ public class MySketch extends PApplet {
         image(lowerBody, 78, 413);
     }
 
+    private void drawPractice2() {
+        // Practice 2 screen: simulate boss sun + miniSuns; player clicks 3 miniSuns to complete
+
+        background(175, 214, 255);
+
+        bossSun.update();
+        bossSun.display();
+
+        // Spawn miniSuns periodically (up to 3 max)
+        if (frameCount % 90 == 0 && miniSuns.size() < 3) {
+            miniSuns.add(new MiniSun(this, bossSun.getX(), bossSun.getY()));
+        }
+
+        // Update and display miniSuns
+        for (int i = miniSuns.size() - 1; i >= 0; i--) {
+            MiniSun m = miniSuns.get(i);
+            m.update();
+            m.display();
+
+            // Remove miniSuns if timer expired but no health penalty here in practice
+            if (m.timer > miniSunLifespan) {
+                miniSuns.remove(i);
+            }
+        }
+
+        drawUpperBody();
+        arrow.display();
+
+        fill(0);
+        textSize(24);
+        textAlign(CENTER, CENTER);
+        text("Practice Stage 2: Click 3 mini suns to continue!", width / 2f, 50);
+        text("Mini Suns hit: " + miniSunsClickedPractice2 + " / " + miniSunsNeededPractice2, width / 2f, 80);
+
+        // When player clicked 3 mini suns, finish practice and reset game or go to intro or next step
+        if (miniSunsClickedPractice2 >= miniSunsNeededPractice2) {
+            showingPractice2 = false;
+            practiceCompleted = true;
+            showingIntro = true;  // or transition to main game as you like
+            miniSunsClickedPractice2 = 0;
+            miniSuns.clear();
+            noLoop();
+        }
+    }
+
     private void drawIntro() {
         fill(0);
         textAlign(CENTER, CENTER);
@@ -248,14 +299,15 @@ public class MySketch extends PApplet {
         text("In the age of myths, 10 suns rose into the sky, scorching the Earth.", width / 2f, height / 2f - 60);
         text("You are Hou Yi, the divine archer. Your mission is to restore balance.", width / 2f, height / 2f - 20);
         text("Press [SPACE] or [ENTER] to begin a short practice.", width / 2f, height / 2f + 40);
+        text("Press [P] to start Practice Stage 2.", width / 2f, height / 2f + 80);  // hint for user
     }
 
-    private void drawPractice() {
+    private void drawPractice1() {
         fill(0);
         textSize(20);
         text("Practice: Hit the sun to continue!", 170, 20);
         text("Press [SPACE] to launch the arrows", 185, 50);
-        text("Press [UP] or [LEFT] to aim the arrow upwards.", 235, 80);        
+        text("Press [UP] or [LEFT] to aim the arrow upwards.", 235, 80);
         text("Press [DOWN] or [RIGHT] to aim the arrow downwards.", 270, 110);
 
         float radius = 500;
@@ -281,7 +333,7 @@ public class MySketch extends PApplet {
 
         fill(222, 200, 159);
         rect(54, 325, 29, 30);
-        
+
         drawUpperBody();
         arrow.update();
         arrow.display();
@@ -308,7 +360,7 @@ public class MySketch extends PApplet {
     private void drawFinalBossBattle() {
         background(175, 214, 255);
 
-        bossSun.update();  // Move the boss sun up and down
+        bossSun.update();
         bossSun.display();
 
         for (int i = miniSuns.size() - 1; i >= 0; i--) {
@@ -327,7 +379,7 @@ public class MySketch extends PApplet {
             }
         }
 
-        if (frameCount % 90 == 0 && miniSuns.size() < 3) {  // spawn up to 3 mini suns
+        if (frameCount % 90 == 0 && miniSuns.size() < 3) {
             miniSuns.add(new MiniSun(this, bossSun.getX(), bossSun.getY()));
         }
 
@@ -349,7 +401,7 @@ public class MySketch extends PApplet {
             checkAndSaveHighScore();
         }
     }
-    
+
     private void drawUpperBody() {
         pushMatrix();
         translate(arrow.getX(), arrow.getY());
@@ -358,7 +410,7 @@ public class MySketch extends PApplet {
         image(upperBody, -10, 10);
         popMatrix();
     }
-    
+
     private void drawGameOver() {
         background(0);
         fill(255);
@@ -413,6 +465,14 @@ public class MySketch extends PApplet {
                 showingPractice = true;
                 loop();
             }
+            else if (key == 'P' || key == 'p') {
+                // Start practice stage 2
+                showingIntro = false;
+                showingPractice2 = true;
+                miniSunsClickedPractice2 = 0;
+                miniSuns.clear();
+                loop();
+            }
             return;
         }
 
@@ -424,6 +484,11 @@ public class MySketch extends PApplet {
             } else if (key == ' ') {
                 arrow.shoot();
             }
+            return;
+        }
+
+        if (showingPractice2) {
+            // No keyboard controls needed in practice 2 for now
             return;
         }
 
